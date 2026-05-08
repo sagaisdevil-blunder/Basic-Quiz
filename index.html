@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JLPT Quiz — Minna no Nihongo L1–5</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Shippori+Mincho:wght@400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #c0392b;
+    --ink: #1a1a2e;
+    --paper: #faf6f0;
+    --gold: #d4a017;
+    --muted: #7a7a8c;
+    --correct: #27ae60;
+    --wrong: #e74c3c;
+    --accent: #2c3e7a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--ink);
+    font-family: 'Space Mono', monospace;
+    color: var(--paper);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Decorative background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.03) 39px, rgba(255,255,255,0.03) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.03) 39px, rgba(255,255,255,0.03) 40px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 740px;
+    margin: 0 auto;
+    padding: 2rem 1.2rem 4rem;
+  }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding: 2rem 1.5rem;
+    background: var(--red);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::after {
+    content: '日本語';
+    position: absolute;
+    right: -10px;
+    top: -10px;
+    font-family: 'Shippori Mincho', serif;
+    font-size: 5rem;
+    color: rgba(255,255,255,0.08);
+    font-weight: 700;
+    pointer-events: none;
+  }
+  header h1 {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 2rem;
+    letter-spacing: 2px;
+    color: #fff;
+  }
+  header p {
+    color: rgba(255,255,255,0.8);
+    font-size: 0.75rem;
+    margin-top: 0.4rem;
+    letter-spacing: 1px;
+  }
+  .badge {
+    display: inline-block;
+    background: var(--gold);
+    color: var(--ink);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 3px 10px;
+    border-radius: 2px;
+    margin-top: 0.8rem;
+  }
+
+  /* PROGRESS */
+  .progress-bar-wrap {
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    height: 6px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+  .progress-text {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-align: right;
+    margin-bottom: 0.4rem;
+    letter-spacing: 1px;
+  }
+
+  /* SCORE */
+  .score-strip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    padding: 0.6rem 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+  .score-strip span { color: var(--gold); font-weight: 700; }
+
+  /* QUESTION CARD */
+  .question-card {
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 6px;
+    padding: 2rem 1.8rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .q-category {
+    font-size: 0.62rem;
+    letter-spacing: 2px;
+    color: var(--red);
+    font-weight: 700;
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
+  }
+
+  .q-text {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
+    color: var(--ink);
+  }
+  .q-sub {
+    font-size: 0.78rem;
+    color: #555;
+    margin-bottom: 1.5rem;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  /* OPTIONS */
+  .options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.7rem;
+  }
+  @media(max-width: 500px) { .options { grid-template-columns: 1fr; } }
+
+  .opt-btn {
+    background: #fff;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.95rem;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    position: relative;
+  }
+  .opt-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: #eef0ff;
+    transform: translateY(-1px);
+  }
+  .opt-btn.correct {
+    border-color: var(--correct);
+    background: #eafaf1;
+    font-weight: 700;
+  }
+  .opt-btn.wrong {
+    border-color: var(--wrong);
+    background: #fdf0f0;
+  }
+  .opt-btn:disabled { cursor: default; }
+
+  .opt-label {
+    font-size: 0.65rem;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  /* FEEDBACK */
+  .feedback {
+    margin-top: 1rem;
+    padding: 0.8rem 1rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    display: none;
+  }
+  .feedback.show { display: block; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  .feedback.correct-fb { background: #eafaf1; color: #1a6636; border-left: 4px solid var(--correct); }
+  .feedback.wrong-fb   { background: #fdf0f0; color: #922b21; border-left: 4px solid var(--wrong); }
+
+  /* NEXT BUTTON */
+  .next-btn {
+    display: none;
+    width: 100%;
+    padding: 0.85rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .next-btn:hover { background: #3a52aa; transform: translateY(-1px); }
+  .next-btn.show { display: block; animation: fadeIn 0.2s ease; }
+
+  /* RESULTS */
+  .results-card {
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 6px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    display: none;
+    animation: slideIn 0.4s ease;
+  }
+  .results-card.show { display: block; }
+  .results-card h2 {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 1.8rem;
+    color: var(--red);
+    margin-bottom: 0.5rem;
+  }
+  .result-score {
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    line-height: 1;
+    margin: 1rem 0;
+  }
+  .result-grade {
+    display: inline-block;
+    padding: 4px 16px;
+    border-radius: 2px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 1rem;
+  }
+  .grade-pass { background: var(--correct); color: #fff; }
+  .grade-fail { background: var(--wrong); color: #fff; }
+  .result-detail {
+    font-size: 0.78rem;
+    color: #555;
+    margin-bottom: 1.5rem;
+    line-height: 1.8;
+  }
+  .restart-btn {
+    background: var(--red);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.8rem 2rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .restart-btn:hover { background: #a93226; }
+
+  /* SECTION LABEL */
+  .section-divider {
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    text-transform: uppercase;
+  }
+  .section-divider::before, .section-divider::after {
+    content:''; flex:1; height:1px; background:rgba(255,255,255,0.1);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>みんなの日本語</h1>
+    <p>JLPT-Style Quiz · Lessons 1–5</p>
+    <div class="badge">N5 LEVEL</div>
+  </header>
+
+  <div id="quizArea">
+    <div class="score-strip">
+      <span id="scoreDisplay">Score: <span id="scoreNum">0</span></span>
+      <span id="qCounter">Q 1 / 25</span>
+    </div>
+    <div class="progress-text" id="progressText">0% complete</div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+
+    <div class="section-divider" id="sectionLabel">Numbers & Vocabulary</div>
+
+    <div class="question-card" id="questionCard">
+      <div class="q-category" id="qCategory"></div>
+      <div class="q-text" id="qText"></div>
+      <div class="q-sub" id="qSub"></div>
+      <div class="options" id="optionsGrid"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="next-btn" id="nextBtn" onclick="nextQuestion()">次へ → NEXT</button>
+    </div>
+  </div>
+
+  <div class="results-card" id="resultsCard">
+    <h2>結果 · Results</h2>
+    <div class="result-score" id="finalScore">0/25</div>
+    <div class="result-grade" id="gradeLabel">PASS</div>
+    <div class="result-detail" id="resultDetail"></div>
+    <button class="restart-btn" onclick="startQuiz()">もう一度 · Try Again</button>
+  </div>
+
+</div>
+
+<script>
+// ===================== QUESTION BANK =====================
+const allQuestions = [
+
+  // --- NUMBERS ---
+  {cat:"Numbers", section:"Numbers & Counting",
+   q:"What is the Japanese word for the number 1?",
+   a:"いち (ichi)", o:["に (ni)","さん (san)","し (shi)"]},
+  {cat:"Numbers", section:"Numbers & Counting",
+   q:"What is the Japanese word for the number 7?",
+   a:"しち (shichi)", o:["ろく (roku)","はち (hachi)","く (ku)"]},
+  {cat:"Numbers", section:"Numbers & Counting",
+   q:"How do you say '10' in Japanese?",
+   a:"じゅう (juu)", o:["きゅう (kyuu)","に (ni)","さん (san)"]},
+  {cat:"Numbers", section:"Numbers & Counting",
+   q:"What does 'はち' mean?",
+   a:"8", o:["5","3","9"]},
+  {cat:"Numbers", section:"Numbers & Counting",
+   q:"How do you say '100' in Japanese?",
+   a:"ひゃく (hyaku)", o:["じゅう (juu)","せん (sen)","まん (man)"]},
+  {cat:"Numbers", section:"Numbers & Counting",
+   q:"How do you say '1,000' in Japanese?",
+   a:"せん (sen)", o:["ひゃく (hyaku)","じゅう (juu)","まん (man)"]},
+
+  // --- GREETINGS & SELF-INTRO (L1) ---
+  {cat:"Lesson 1", section:"Greetings & Self-Introduction",
+   q:"How do you say 'Good morning' in Japanese?",
+   a:"おはようございます", o:["こんにちは","こんばんは","さようなら"]},
+  {cat:"Lesson 1", section:"Greetings & Self-Introduction",
+   q:"What does 'はじめまして' mean?",
+   a:"Nice to meet you", o:["Goodbye","Thank you","Good evening"]},
+  {cat:"Lesson 1", section:"Greetings & Self-Introduction",
+   q:"How do you say 'I am a student' in Japanese?",
+   a:"わたしは がくせい です。", o:["わたしは せんせい です。","あなたは がくせい です。","これは ほん です。"]},
+  {cat:"Lesson 1", section:"Greetings & Self-Introduction",
+   q:"What does '～じゃありません' mean?",
+   a:"is not ~", o:["is ~","was ~","will be ~"]},
+  {cat:"Lesson 1", section:"Greetings & Self-Introduction",
+   q:"What particle marks the topic of a sentence?",
+   a:"は (wa)", o:["が (ga)","を (wo)","に (ni)"]},
+
+  // --- OCCUPATIONS & NATIONALITIES (L1-2) ---
+  {cat:"Lesson 2", section:"Vocabulary — People & Places",
+   q:"What does 'せんせい' mean?",
+   a:"Teacher", o:["Student","Doctor","Engineer"]},
+  {cat:"Lesson 2", section:"Vocabulary — People & Places",
+   q:"What does 'かいしゃいん' mean?",
+   a:"Company employee", o:["Student","Teacher","Police officer"]},
+  {cat:"Lesson 2", section:"Vocabulary — People & Places",
+   q:"Which word means 'country / nation'?",
+   a:"くに (kuni)", o:["まち (machi)","いえ (ie)","かいしゃ (kaisha)"]},
+  {cat:"Lesson 2", section:"Vocabulary — People & Places",
+   q:"The word 'なんさいですか' is asking about…?",
+   a:"Age", o:["Name","Nationality","Occupation"]},
+
+  // --- THIS / THAT / THAT OVER THERE (L3) ---
+  {cat:"Lesson 3", section:"これ・それ・あれ (Ko-so-a-do)",
+   q:"Which word means 'this (thing near me)'?",
+   a:"これ (kore)", o:["それ (sore)","あれ (are)","どれ (dore)"]},
+  {cat:"Lesson 3", section:"これ・それ・あれ (Ko-so-a-do)",
+   q:"Which word means 'that (near you)'?",
+   a:"それ (sore)", o:["これ (kore)","あれ (are)","どれ (dore)"]},
+  {cat:"Lesson 3", section:"これ・それ・あれ (Ko-so-a-do)",
+   q:"'どれ' is used to ask…?",
+   a:"Which one?", o:["Where?","What?","Who?"]},
+  {cat:"Lesson 3", section:"これ・それ・あれ (Ko-so-a-do)",
+   q:"'この ほん は だれの ですか。' means:",
+   a:"Whose book is this?", o:["What is this book?","Where is this book?","Is this a book?"]},
+  {cat:"Lesson 3", section:"これ・それ・あれ (Ko-so-a-do)",
+   q:"What does 'の' indicate in 'わたし の かばん'?",
+   a:"Possession (my bag)", o:["Location","Topic","Object"]},
+
+  // --- TIME & VERBS (L4) ---
+  {cat:"Lesson 4", section:"Time & Daily Actions",
+   q:"How do you say 'What time is it?'",
+   a:"いま なんじ ですか。", o:["きょう なんにち ですか。","いくら ですか。","なに を しますか。"]},
+  {cat:"Lesson 4", section:"Time & Daily Actions",
+   q:"What does 'ごぜん' mean?",
+   a:"AM (before noon)", o:["PM (after noon)","Evening","Morning meal"]},
+  {cat:"Lesson 4", section:"Time & Daily Actions",
+   q:"'しごとは なんじから なんじまで ですか' asks about…?",
+   a:"Work hours (from ~ to ~)", o:["Meal times","School name","Where you work"]},
+  {cat:"Lesson 4", section:"Time & Daily Actions",
+   q:"Which particle shows the starting time of an action?",
+   a:"から (kara) — from", o:["まで (made) — until","に (ni) — at/to","で (de) — by means of"]},
+  {cat:"Lesson 5", section:"Verbs & Going/Coming/Returning",
+   q:"'いきます' means:",
+   a:"go", o:["come","return","eat"]},
+  {cat:"Lesson 5", section:"Verbs & Going/Coming/Returning",
+   q:"'きます' means:",
+   a:"come", o:["go","return","see"]},
+  {cat:"Lesson 5", section:"Verbs & Going/Coming/Returning",
+   q:"'かえります' means:",
+   a:"return / go home", o:["come","go","leave"]},
+  {cat:"Lesson 5", section:"Verbs & Going/Coming/Returning",
+   q:"Which particle marks the destination? (e.g., 'I go TO Tokyo')",
+   a:"に (ni) or へ (e)", o:["を (wo)","が (ga)","は (wa)"]},
+  {cat:"Lesson 5", section:"Verbs & Going/Coming/Returning",
+   q:"'でんしゃで いきます' means:",
+   a:"go by train", o:["go on foot","come by bus","return by car"]},
+  {cat:"Lesson 5", section:"Verbs & Going/Coming/Returning",
+   q:"'だれと いきますか' is asking:",
+   a:"With whom will you go?", o:["Where will you go?","When will you go?","How will you go?"]},
+];
+
+// ===================== QUIZ STATE =====================
+let questions = [];
+let current = 0;
+let score = 0;
+let answered = false;
+
+function shuffle(arr) {
+  for(let i = arr.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function startQuiz() {
+  questions = shuffle([...allQuestions]).slice(0, 25);
+  current = 0; score = 0;
+  document.getElementById('resultsCard').classList.remove('show');
+  document.getElementById('quizArea').style.display = 'block';
+  loadQuestion();
+}
+
+function loadQuestion() {
+  answered = false;
+  const q = questions[current];
+  const total = questions.length;
+
+  document.getElementById('qCounter').textContent = `Q ${current+1} / ${total}`;
+  document.getElementById('scoreNum').textContent = score;
+  document.getElementById('qCategory').textContent = q.cat;
+  document.getElementById('qText').textContent = q.q;
+  document.getElementById('qSub').textContent = '';
+  document.getElementById('sectionLabel').textContent = q.section;
+
+  const pct = Math.round((current / total) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = pct + '% complete';
+
+  // Build shuffled options
+  const opts = shuffle([q.a, ...q.o.slice(0,3)]);
+  const labels = ['A','B','C','D'];
+  const grid = document.getElementById('optionsGrid');
+  grid.innerHTML = '';
+  opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.innerHTML = `<span class="opt-label">${labels[i]}</span>${opt}`;
+    btn.onclick = () => checkAnswer(opt, q.a);
+    grid.appendChild(btn);
+  });
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback'; fb.textContent = '';
+  document.getElementById('nextBtn').className = 'next-btn';
+}
+
+function checkAnswer(selected, correct) {
+  if(answered) return;
+  answered = true;
+  const btns = document.querySelectorAll('.opt-btn');
+  const fb = document.getElementById('feedback');
+
+  btns.forEach(btn => {
+    btn.disabled = true;
+    const text = btn.textContent.replace(/^[ABCD]/,'').trim();
+    if(text === correct) btn.classList.add('correct');
+    else if(text === selected && selected !== correct) btn.classList.add('wrong');
+  });
+
+  if(selected === correct) {
+    score++;
+    document.getElementById('scoreNum').textContent = score;
+    fb.textContent = '✓ 正解！Correct!';
+    fb.className = 'feedback correct-fb show';
+  } else {
+    fb.textContent = `✗ Incorrect. The answer is: ${correct}`;
+    fb.className = 'feedback wrong-fb show';
+  }
+  document.getElementById('nextBtn').className = 'next-btn show';
+}
+
+function nextQuestion() {
+  current++;
+  if(current >= questions.length) {
+    showResults();
+  } else {
+    loadQuestion();
+  }
+}
+
+function showResults() {
+  document.getElementById('quizArea').style.display = 'none';
+  const total = questions.length;
+  const pct = Math.round((score / total) * 100);
+  const pass = pct >= 60;
+
+  document.getElementById('finalScore').textContent = `${score}/${total}`;
+  const grade = document.getElementById('gradeLabel');
+  grade.textContent = pass ? '合格 · PASS' : '不合格 · FAIL';
+  grade.className = 'result-grade ' + (pass ? 'grade-pass' : 'grade-fail');
+
+  let level = '';
+  if(pct >= 90) level = 'Outstanding! あなたは すごいです！';
+  else if(pct >= 75) level = 'Great work! もう少しで 完璧です。';
+  else if(pct >= 60) level = 'You passed! Keep studying!';
+  else level = 'Keep practicing! がんばってください！';
+
+  document.getElementById('resultDetail').innerHTML =
+    `Correct answers: <strong>${score} / ${total}</strong><br>
+     Score: <strong>${pct}%</strong><br><br>${level}`;
+  document.getElementById('resultsCard').classList.add('show');
+}
+
+// Start
+startQuiz();
+</script>
+</body>
+</html>
